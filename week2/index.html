@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechBridge Internships - Launch Your Career</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header class="hero">
+        <div class="hero-content">
+            <h1>TechBridge <span class="gradient-text">Internships</span></h1>
+            <p class="hero-subtitle">Where talent meets opportunity. Transform your skills into real-world impact.</p>
+            <div class="hero-stats">
+                <div class="stat">
+                    <span class="stat-number">500+</span>
+                    <span class="stat-label">Students Placed</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">95%</span>
+                    <span class="stat-label">Job Success Rate</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">4.9/5</span>
+                    <span class="stat-label">Student Rating</span>
+                </div>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="floating-card web-card">
+                <i class="fas fa-code"></i>
+                <span>Web Dev</span>
+            </div>
+            <div class="floating-card app-card">
+                <i class="fas fa-mobile-alt"></i>
+                <span>App Dev</span>
+            </div>
+            <div class="floating-card python-card">
+                <i class="fab fa-python"></i>
+                <span>Python</span>
+            </div>
+            <div class="floating-card java-card">
+                <i class="fab fa-java"></i>
+                <span>Java</span>
+            </div>
+        </div>
+    </header>
+
+    <section class="filters">
+        <button class="filter-btn active" data-filter="all">All Programs</button>
+        <button class="filter-btn" data-filter="web">Web Development</button>
+        <button class="filter-btn" data-filter="mobile">Mobile Development</button>
+        <button class="filter-btn" data-filter="backend">Backend Development</button>
+    </section>
+
+    <main class="container">
+        <!-- Web Development Card -->
+        <div class="internship-card web" data-category="web">
+            <div class="card-header">
+                <div class="icon-container web-icon">
+                    <i class="fas fa-laptop-code"></i>
+                </div>
+                <div class="difficulty-badge beginner">Beginner Friendly</div>
+            </div>
+            <div class="card-content">
+                <h2>Full-Stack Web Development</h2>
+                <p class="tagline">Build modern web applications with React, Node.js, and MongoDB</p>
+                
+                <div class="skills-preview">
+                    <span class="skill-tag">React</span>
+                    <span class="skill-tag">Node.js</span>
+                    <span class="skill-tag">MongoDB</span>
+                    <span class="skill-tag">+3 more</span>
+                </div>
+
+                <div class="program-details">
+                    <div class="detail-item">
+                        <i class="fas fa-clock"></i>
+                        <span><strong>8 weeks</strong> intensive</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-users"></i>
+                        <span><strong>1-on-1</strong> mentorship</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-project-diagram"></i>
+                        <span><strong>3 portfolio</strong> projects</span>
+                    </div>
+                </div>
+
+                <div class="success-metric">
+                    <div class="progress-bar">
+                        <div class="progress" style="width: 92%"></div>
+                    </div>
+                    <span>92% of students land jobs within 3 months</span>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="https://www.geeksforgeeks.org/blogs/what-is-full-stack-development/" class="btn primary-btn">View Program</a>
+                <div class="next-cohort">Next cohort: <strong>Jan 15, 2025</strong></div>
+            </div>
+        </div>
+
+        <!-- App Development Card -->
+        <div class="internship-card mobile" data-category="mobile">
+            <div class="card-header">
+                <div class="icon-container mobile-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <div class="difficulty-badge intermediate">Intermediate</div>
+            </div>
+            <div class="card-content">
+                <h2>Mobile App Development</h2>
+                <p class="tagline">Create stunning iOS and Android apps with Flutter and Firebase</p>
+                
+                <div class="skills-preview">
+                    <span class="skill-tag">Flutter</span>
+                    <span class="skill-tag">Firebase</span>
+                    <span class="skill-tag">Dart</span>
+                    <span class="skill-tag">+2 more</span>
+                </div>
+
+                <div class="program-details">
+                    <div class="detail-item">
+                        <i class="fas fa-clock"></i>
+                        <span><strong>10 weeks</strong> part-time</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-rocket"></i>
+                        <span><strong>App Store</strong> deployment</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-trophy"></i>
+                        <span><strong>Live app</strong> launch</span>
+                    </div>
+                </div>
+
+                <div class="success-metric">
+                    <div class="progress-bar">
+                        <div class="progress" style="width: 88%"></div>
+                    </div>
+                    <span>88% publish their app to stores</span>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="https://web.classplusapp.com/store/home?tabCategoryId=2&categoryId=[149]" class="btn primary-btn">View Program</a>
+                <div class="next-cohort">Next cohort: <strong>Feb 1, 2025</strong></div>
+            </div>
+        </div>
+
+        <!-- Python Development Card -->
+        <div class="internship-card backend" data-category="backend">
+            <div class="card-header">
+                <div class="icon-container python-icon">
+                    <i class="fab fa-python"></i>
+                </div>
+                <div class="difficulty-badge advanced">Advanced</div>
+            </div>
+            <div class="card-content">
+                <h2>Python Data Engineering</h2>
+                <p class="tagline">Master data pipelines, ML models, and cloud infrastructure</p>
+                
+                <div class="skills-preview">
+                    <span class="skill-tag">Python</span>
+                    <span class="skill-tag">AWS</span>
+                    <span class="skill-tag">Docker</span>
+                    <span class="skill-tag">+4 more</span>
+                </div>
+
+                <div class="program-details">
+                    <div class="detail-item">
+                        <i class="fas fa-database"></i>
+                        <span><strong>Real datasets</strong> from companies</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-cloud"></i>
+                        <span><strong>Cloud</strong> deployment</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-chart-line"></i>
+                        <span><strong>ML models</strong> in production</span>
+                    </div>
+                </div>
+
+                <div class="success-metric">
+                    <div class="progress-bar">
+                        <div class="progress" style="width: 94%"></div>
+                    </div>
+                    <span>94% receive job offers from partner companies</span>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="https://web.classplusapp.com/store/home?tabCategoryId=2&categoryId=[149]" class="btn primary-btn">View Program</a>
+                <div class="next-cohort">Next cohort: <strong>Jan 22, 2025</strong></div>
+            </div>
+        </div>
+
+        <!-- Java Development Card -->
+        <div class="internship-card backend" data-category="backend">
+            <div class="card-header">
+                <div class="icon-container java-icon">
+                    <i class="fab fa-java"></i>
+                </div>
+                <div class="difficulty-badge intermediate">Intermediate</div>
+            </div>
+            <div class="card-content">
+                <h2>Enterprise Java Development</h2>
+                <p class="tagline">Build scalable microservices with Spring Boot and Kubernetes</p>
+                
+                <div class="skills-preview">
+                    <span class="skill-tag">Java</span>
+                    <span class="skill-tag">Spring Boot</span>
+                    <span class="skill-tag">Kubernetes</span>
+                    <span class="skill-tag">+3 more</span>
+                </div>
+
+                <div class="program-details">
+                    <div class="detail-item">
+                        <i class="fas fa-server"></i>
+                        <span><strong>Microservices</strong> architecture</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-shield-alt"></i>
+                        <span><strong>Security</strong> best practices</span>
+                    </div>
+                    <div class="detail-item">
+                        <i class="fas fa-cogs"></i>
+                        <span><strong>CI/CD</strong> pipelines</span>
+                    </div>
+                </div>
+
+                <div class="success-metric">
+                    <div class="progress-bar">
+                        <div class="progress" style="width: 90%"></div>
+                    </div>
+                    <span>90% join enterprise teams as junior developers</span>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="https://web.classplusapp.com/store/home?tabCategoryId=2&categoryId=[149]" class="btn primary-btn">View Program</a>
+                <div class="next-cohort">Next cohort: <strong>Jan 29, 2025</strong></div>
+            </div>
+        </div>
+    </main>
+
+    <section class="testimonials">
+        <h2>Success Stories</h2>
+        <div class="testimonial-grid">
+            <div class="testimonial">
+                <div class="quote">"The web development program transformed my career. I landed a job at a startup within 2 months!"</div>
+                <div class="author">Sarah Chen, Frontend Developer at TechFlow</div>
+            </div>
+            <div class="testimonial">
+                <div class="quote">"Built my first mobile app and got 10K downloads. The mentorship was incredible."</div>
+                <div class="author">Marcus Johnson, Mobile Developer</div>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>
