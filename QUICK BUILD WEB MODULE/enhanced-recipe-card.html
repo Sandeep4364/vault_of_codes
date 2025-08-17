@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interactive Recipe Card — Chocolate Cake</title>
+  <style>
+/* ========== CSS RESET (modern) ========== */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, 'Helvetica Neue', Arial, 'Apple Color Emoji','Segoe UI Emoji'; line-height: 1.5; background: var(--bg); color: var(--text); }
+
+/* ========== THEME ========== */
+:root {
+  --bg: #0b0d10;
+  --surface: #12161c;
+  --surface-2: #171c23;
+  --text: #e6ebf2;
+  --muted: #a7b0bf;
+  --brand: #8b5cf6;
+  --brand-2: #22d3ee;
+  --ok: #10b981;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  --radius: 18px;
+  --shadow: 0 10px 30px rgba(0,0,0,.35);
+  --gap: 1rem;
+}
+
+/* ========== LAYOUT ========== */
+.site-header {
+  padding: 1rem 1.25rem;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(139,92,246,.15), rgba(34,211,238,.08));
+  position: sticky; top: 0; z-index: 10; backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.app-title { margin: 0; font-size: clamp(1.25rem, 2vw + .5rem, 2rem); letter-spacing: .3px; }
+
+.container {
+  max-width: 1100px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.card {
+  background: linear-gradient(180deg, var(--surface), var(--surface-2));
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: var(--radius);
+  overflow: clip;
+  box-shadow: var(--shadow);
+  display: grid;
+  grid-template-columns: 1.2fr 1.8fr;
+  gap: 0;
+}
+
+.card__media {
+  position: relative;
+  overflow: hidden;
+  min-height: 280px;
+}
+.card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.05);
+  animation: float-in 900ms ease-out both;
+}
+@keyframes float-in {
+  from { transform: translateY(10px) scale(1.08); filter: brightness(.7); opacity: 0; }
+  to   { transform: translateY(0) scale(1.05); filter: brightness(1); opacity: 1; }
+}
+.badge {
+  position: absolute; bottom: 12px; left: 12px;
+  background: rgba(17,24,39,.7);
+  border: 1px solid rgba(255,255,255,.12);
+  padding: .35rem .6rem; border-radius: 999px;
+  font-size: .85rem; color: var(--text);
+  backdrop-filter: blur(4px);
+}
+
+.card__body { padding: 1.25rem 1.25rem 1rem; }
+.subtitle { margin-top: .25rem; color: var(--muted); }
+
+.meta {
+  display: flex; gap: .75rem; flex-wrap: wrap; margin: 1rem 0 1rem;
+}
+.meta__item {
+  display: inline-flex; align-items: center; gap: .45rem;
+  padding: .4rem .6rem; border-radius: 999px;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.06);
+  color: var(--text); font-size: .9rem;
+  transition: transform .2s ease, background .3s ease;
+}
+.meta__item:hover { transform: translateY(-2px); background: rgba(255,255,255,.06); }
+.meta__item svg { width: 18px; height: 18px; fill: currentColor; opacity: .9; }
+
+.controls {
+  display: flex; flex-wrap: wrap; gap: .6rem; margin: .5rem 0 1rem;
+}
+
+.btn {
+  appearance: none; border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.05); color: var(--text);
+  padding: .55rem .9rem; border-radius: 12px;
+  font-weight: 600; letter-spacing: .2px; cursor: pointer;
+  transition: transform .12s ease, background .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+.btn:hover { transform: translateY(-1px); background: rgba(255,255,255,.08); }
+.btn:active { transform: translateY(0); }
+.btn[disabled] { opacity: .55; cursor: not-allowed; }
+
+.btn-primary {
+  background: radial-gradient(120px 120px at 20% 20%, rgba(139,92,246,.35), transparent),
+              radial-gradient(120px 120px at 80% 50%, rgba(34,211,238,.35), transparent),
+              rgba(139,92,246,.2);
+  border-color: rgba(139,92,246,.35);
+  animation: pulse 2s infinite ease-in-out;
+}
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(139,92,246,.0); }
+  50%     { box-shadow: 0 0 0 10px rgba(139,92,246,.08); }
+}
+.btn-ghost { background: transparent; }
+
+.progress { margin: .75rem 0 1rem; }
+.progress__label { font-size: .9rem; color: var(--muted); margin-bottom: .35rem; }
+.progress__bar {
+  width: 100%; height: 10px; border-radius: 999px; overflow: hidden;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.08);
+}
+#progress-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, var(--brand), var(--brand-2));
+  transition: width .5s ease;
+}
+
+.timer {
+  margin: .25rem 0 1rem;
+  padding: .6rem .8rem;
+  border: 1px dashed rgba(255,255,255,.15);
+  border-radius: 12px;
+  background: rgba(255,255,255,.03);
+  display: none;
+}
+.timer.active { display: block; animation: fadeIn .3s ease; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.timer__row {
+  display: flex;
+  gap: .75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+#timer-display {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--brand-2);
+}
+.timer-controls {
+  display: flex;
+  gap: .5rem;
+}
+.timer-btn {
+  padding: .25rem .5rem;
+  font-size: .8rem;
+  border-radius: 6px;
+}
+
+.panel {
+  background: rgba(255,255,255,.02);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 14px;
+  padding: .9rem 1rem;
+  margin: 1rem 0;
+  transition: max-height .5s ease, opacity .35s ease, border-color .35s ease;
+  overflow: hidden;
+  max-height: 1000px; opacity: 1;
+}
+.panel.is-collapsed {
+  max-height: 0;
+  opacity: 0;
+  border-color: transparent;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.list {
+  margin: .5rem 0 0 1.25rem;
+}
+.list li {
+  margin: .35rem 0;
+  transition: color .2s ease, transform .2s ease, background-color .2s ease;
+  padding: .25rem .5rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.list li:hover {
+  color: var(--brand-2);
+  transform: translateX(4px);
+  background-color: rgba(255,255,255,.05);
+}
+.list li.checked {
+  text-decoration: line-through;
+  opacity: .6;
+}
+
+.steps {
+  margin: .5rem 0 0 1.25rem;
+  counter-reset: step;
+}
+.steps li {
+  margin: .5rem 0;
+  position: relative;
+  padding: .75rem .5rem .75rem 2.5rem;
+  list-style: none;
+  transition: background .25s ease, border-color .25s ease, transform .2s ease;
+  border-left: 3px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.steps li::before {
+  counter-increment: step;
+  content: counter(step);
+  position: absolute;
+  left: .5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,.1);
+  color: var(--text);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .8rem;
+  font-weight: 600;
+}
+.steps li:hover {
+  transform: translateX(4px);
+  background: rgba(255,255,255,.05);
+}
+.steps li.active {
+  background: rgba(34,211,238,.08);
+  border-left-color: var(--brand-2);
+}
+.steps li.active::before {
+  background: var(--brand-2);
+  color: var(--bg);
+}
+.steps li.completed {
+  opacity: .7;
+}
+.steps li.completed::before {
+  background: var(--ok);
+  color: var(--bg);
+}
+
+.card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: .5rem;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+.btn-print {
+  border-color: rgba(255,255,255,.18);
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 900px) {
+  .card { grid-template-columns: 1fr; }
+  .card__media { max-height: 260px; }
+}
+
+@media (max-width: 600px) {
+  .container { margin: 1rem auto; padding: 0 .5rem; }
+  .card__body { padding: 1rem; }
+  .controls { justify-content: center; }
+  .meta { justify-content: center; }
+}
+
+/* ========== PRINT STYLES ========== */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+    line-height: 1.4;
+  }
+  
+  .site-header,
+  .controls,
+  .progress,
+  .timer,
+  .btn-print {
+    display: none !important;
+  }
+  
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    background: white !important;
+    color: black !important;
+  }
+  
+  .card__media img {
+    filter: none !important;
+  }
+  
+  .panel {
+    background: transparent !important;
+    border: 1px solid #eee !important;
+    color: black !important;
+  }
+  
+  .list li,
+  .steps li {
+    color: black !important;
+  }
+  
+  .steps li.active {
+    background: #f0f0f0 !important;
+    border-left-color: #333 !important;
+  }
+}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <h1 class="app-title">Interactive Recipe Card</h1>
+  </header>
+
+  <main class="container">
+    <article class="card" aria-labelledby="recipe-title">
+      <div class="card__media">
+        <img src="https://images.unsplash.com/photo-1606313564200-e75d5e30476c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" alt="Chocolate cake" />
+        <span class="badge">Serves <strong id="servings">8</strong></span>
+      </div>
+
+      <div class="card__body">
+        <h2 id="recipe-title">Chocolate Cake</h2>
+        <p class="subtitle">Rich, moist, and impossible to resist.</p>
+
+        <section class="meta">
+          <div class="meta__item" aria-label="Preparation time">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1a11 11 0 1 0 11 11A11.013 11.013 0 0 0 12 1Zm1 11H7V11h5V5h1Z"/></svg>
+            <span><strong id="prep-time">45</strong> min</span>
+          </div>
+          <div class="meta__item" aria-label="Difficulty">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 2 7l10 5 10-5-10-5Zm0 9.09L4 7.5V17l8 4.59L20 17V7.5Z"/></svg>
+            <span>Easy</span>
+          </div>
+          <div class="meta__item" aria-label="Calories per serving">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C7 3 3 7 3 12s4 9 9 9 9-4 9-9-4-9-9-9Zm0-4h-2V7h2Zm0 10h-2v-2h2Z"/></svg>
+            <span>320 kcal</span>
+          </div>
+        </section>
+
+        <div class="controls">
+          <button id="toggle-ingredients" class="btn" aria-expanded="false" aria-controls="ingredients">Show Ingredients</button>
+          <button id="toggle-steps" class="btn" aria-expanded="true" aria-controls="steps">Hide Steps</button>
+          <button id="start" class="btn btn-primary">Start Cooking</button>
+          <button id="next" class="btn" disabled>Next Step</button>
+          <button id="reset" class="btn btn-ghost">Reset</button>
+        </div>
+
+        <div class="progress">
+          <div class="progress__label"><span id="progress-text">0%</span> complete</div>
+          <div class="progress__bar" aria-hidden="true"><div id="progress-fill"></div></div>
+        </div>
+
+        <div id="timer" class="timer">
+          <div class="timer__row">
+            <span>Time remaining: <span id="timer-display">45:00</span></span>
+            <div class="timer-controls">
+              <button id="pause-timer" class="btn timer-btn">Pause</button>
+              <button id="reset-timer" class="btn timer-btn">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <section id="ingredients" class="panel is-collapsed" aria-label="Ingredients">
+          <h3>Ingredients</h3>
+          <ul class="list">
+            <li>1½ cups all-purpose flour</li>
+            <li>1 cup granulated sugar</li>
+            <li>¼ cup unsweetened cocoa powder</li>
+            <li>1 tsp baking soda</li>
+            <li>½ tsp salt</li>
+            <li>1 cup warm water</li>
+            <li>⅓ cup vegetable oil</li>
+            <li>1 tbsp white vinegar</li>
+            <li>1 tsp vanilla extract</li>
+            <li>Chocolate frosting (optional)</li>
+          </ul>
+        </section>
+
+        <section id="steps" class="panel" aria-label="Steps">
+          <h3>Step-by-step</h3>
+          <ol class="steps">
+            <li>Preheat oven to 180°C (350°F). Grease an 8-inch pan.</li>
+            <li>Whisk dry ingredients: flour, sugar, cocoa, baking soda, salt.</li>
+            <li>Add water, oil, vinegar, and vanilla. Mix until smooth.</li>
+            <li>Pour batter into pan and smooth the top.</li>
+            <li>Bake 30–35 minutes until a toothpick comes out clean.</li>
+            <li>Cool completely. Frost if desired, slice, and serve.</li>
+          </ol>
+        </section>
+
+        <footer class="card__footer">
+          <span id="recipe-info">Ready in 45 minutes • 8 servings</span>
+          <button class="btn btn-print" onclick="window.print()">Print Recipe</button>
+        </footer>
+      </div>
+    </article>
+  </main>
+
+  <script>
+(function () {
+  const $ = (sel, parent = document) => parent.querySelector(sel);
+  const $$ = (sel, parent = document) => [...parent.querySelectorAll(sel)];
+
+  // Elements
+  const btnIngredients = $('#toggle-ingredients');
+  const btnSteps = $('#toggle-steps');
+  const btnStart = $('#start');
+  const btnNext = $('#next');
+  const btnReset = $('#reset');
+  const btnPause = $('#pause-timer');
+  const btnResetTimer = $('#reset-timer');
+  const ingredientsPanel = $('#ingredients');
+  const stepsPanel = $('#steps');
+  const stepItems = $$('#steps li');
+  const progressFill = $('#progress-fill');
+  const progressText = $('#progress-text');
+  const timerDisplay = $('#timer-display');
+  const timerContainer = $('#timer');
+
+  let currentStep = -1;
+  let timerInterval = null;
+  let timeRemaining = 45 * 60; // 45 minutes in seconds
+  let isPaused = false;
+
+  // Initialize
+  resetAll();
+
+  // Timer functions
+  function startTimer() {
+    timerContainer.classList.add('active');
+    timerInterval = setInterval(() => {
+      if (!isPaused) {
+        timeRemaining--;
+        updateTimerDisplay();
+        
+        if (timeRemaining <= 0) {
+          clearInterval(timerInterval);
+          timerDisplay.textContent = 'Done!';
+          timerDisplay.style.color = 'var(--ok)';
+        }
+      }
+    }, 1000);
+  }
+
+  function pauseTimer() {
+    isPaused = !isPaused;
+    btnPause.textContent = isPaused ? 'Resume' : 'Pause';
+  }
+
+  function resetTimer() {
+    clearInterval(timerInterval);
+    timeRemaining = 45 * 60;
+    isPaused = false;
+    updateTimerDisplay();
+    btnPause.textContent = 'Pause';
+    timerDisplay.style.color = 'var(--brand-2)';
+  }
+
+  function updateTimerDisplay() {
+    const minutes = Math.floor(timeRemaining / 60);
+    const seconds = timeRemaining % 60;
+    timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  // Progress functions
+  function updateProgress() {
+    const total = stepItems.length;
+    const done = Math.max(0, currentStep + 1);
+    const pct = Math.round((done / total) * 100);
+    progressFill.style.width = pct + '%';
+    progressText.textContent = pct + '%';
+  }
+
+  function setActiveStep(index) {
+    stepItems.forEach((li, i) => {
+      li.classList.toggle('active', i === index);
+      li.classList.toggle('completed', i < index);
+    });
+    currentStep = index;
+    btnNext.disabled = currentStep >= stepItems.length - 1;
+    updateProgress();
+  }
+
+  // Panel toggle functions
+  function togglePanel(panelEl, btnEl) {
+    const collapsed = panelEl.classList.toggle('is-collapsed');
+    const label = panelEl.id.charAt(0).toUpperCase() + panelEl.id.slice(1);
+    btnEl.textContent = collapsed ? `Show ${label}` : `Hide ${label}`;
+    btnEl.setAttribute('aria-expanded', String(!collapsed));
+  }
+
+  function resetAll() {
+    setActiveStep(-1);
+    btnNext.disabled = true;
+    ingredientsPanel.classList.add('is-collapsed');
+    btnIngredients.textContent = 'Show Ingredients';
+    btnIngredients.setAttribute('aria-expanded', 'false');
+
+    stepsPanel.classList.remove('is-collapsed');
+    btnSteps.textContent = 'Hide Steps';
+    btnSteps.setAttribute('aria-expanded', 'true');
+    
+    progressFill.style.width = '0%';
+    progressText.textContent = '0%';
+    
+    resetTimer();
+    timerContainer.classList.remove('active');
+  }
+
+  // Event listeners
+  btnIngredients.addEventListener('click', () => togglePanel(ingredientsPanel, btnIngredients));
+  btnSteps.addEventListener('click', () => togglePanel(stepsPanel, btnSteps));
+
+  btnStart.addEventListener('click', () => {
+    setActiveStep(0);
+    btnNext.disabled = false;
+    startTimer();
+  });
+
+  btnNext.addEventListener('click', () => {
+    const nextIndex = Math.min(currentStep + 1, stepItems.length - 1);
+    setActiveStep(nextIndex);
+  });
+
+  btnReset.addEventListener('click', resetAll);
+  btnPause.addEventListener('click', pauseTimer);
+  btnResetTimer.addEventListener('click', resetTimer);
+
+  // Ingredient checklist
+  $$('.list li').forEach(li => {
+    li.addEventListener('click', () => {
+      li.classList.toggle('checked');
+    });
+  });
+
+  // Step click navigation
+  stepItems.forEach((li, index) => {
+    li.addEventListener('click', () => {
+      if (index <= currentStep + 1) {
+        setActiveStep(index);
+      }
+    });
+  });
+})();
+  </script>
+</body>
+</html>
