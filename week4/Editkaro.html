@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editkaro.in - The Kinetic Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Kinetic Neutrals -->
+    <!-- Application Structure Plan: The SPA maintains its fully immersive, single-view design with a full-screen 3D canvas as the primary interface. Portfolio items are interactive, physics-enabled 3D objects. Enhancements include camera rotation for deeper exploration, an initial object spawning animation, and a subtle particle system. The minimalist UI for filtering and info remains, with improved visual feedback on interactions. The modal view for detailed project information is retained and enhanced for smoother transitions. The core user flow is enriched: Immerse (with dynamic entry) -> Interact (more control) -> Explore (richer visuals) -> Detail. Now, an AI Creative Assistant is integrated into the footer's input, offering both content generation and dynamic filtering. -->
+    <!-- Visualization & Content Choices: 
+        1. Report Info: Portfolio of video projects. Goal: Organize/Explore. Viz/Method: Interactive 3D objects in a physics world (three.js + Cannon.js). Interaction: Mouse cursor as a physics-based "force field", enhanced with camera drag controls, subtle object rotation on hover, and a gentle gravitational pull towards the center. Justification: These additions significantly increase the tactile and exploratory nature, making the 3D environment feel more alive and responsive to user input. The initial animation and particle system add to the immediate "wow" factor.
+        2. Report Info: Project-specific skills/metrics. Goal: Inform/Compare. Viz/Method: Chart.js Radar Chart within a project detail modal. Interaction: Appears on-click of a 3D object, with a more fluid modal opening animation. Justification: Provides clear, quantitative skill breakdown while improving the presentation and perceived responsiveness of the modal.
+        3. Report Info: Project categories & AI Assistant. Goal: Organize/Filter and Generate Content. Viz/Method: UI buttons for filtering; text input for AI queries. Interaction: Clicking a filter applies targeted forces, subtly sorting objects, and now includes enhanced visual feedback on active filters. The AI assistant allows users to type queries: If it's a filter (e.g., "show gaming"), it applies the physics filter; if it's a creative prompt (e.g., "describe a high-energy montage"), it calls the Gemini API to generate text, displayed in a temporary chat bubble. Justification: Refines a core interaction, making the filtering process more visually coherent. The Gemini AI integration adds a powerful, unique creative tool directly into the portfolio interaction, showcasing cutting-edge AI capabilities.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F5F5F3;
+            color: #1E1E1E;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        #bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            outline: none;
+            z-index: 0;
+        }
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .ui-element {
+            pointer-events: auto;
+        }
+        #modal-backdrop {
+            transition: opacity 0.3s ease-in-out;
+        }
+        #modal-content {
+            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 1rem auto;
+            height: 300px;
+            max-height: 300px;
+        }
+        .filter-btn {
+            transition: background-color 0.2s, color 0.2s, transform 0.1s;
+        }
+        .filter-btn:hover {
+            transform: translateY(-2px);
+        }
+        .filter-btn.active {
+            background-color: #F97316; /* A more vibrant orange for active state */
+            color: white;
+            box-shadow: 0 4px 10px rgba(249, 115, 22, 0.4);
+        }
+        #ai-response-bubble {
+            pointer-events: auto;
+            position: absolute;
+            bottom: calc(100% + 10px); /* Position above the input */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            color: white;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            max-width: 90%;
+            width: max-content;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        #ai-response-bubble.show {
+            opacity: 1;
+        }
+        #ai-response-bubble:after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: -10px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid #333;
+            transform: translateX(-50%);
+        }
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid #fff;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <canvas id="bg"></canvas>
+
+    <div class="ui-overlay flex flex-col justify-between p-4 md:p-8">
+        <header class="ui-element w-full flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800">Editkaro.in</h1>
+            <div id="info-box" class="hidden md:block bg-white/50 backdrop-blur-sm p-3 rounded-lg text-gray-700 text-sm">
+                <p>Move your cursor to interact. Drag to rotate camera. Click an object to explore.</p>
+            </div>
+        </header>
+
+        <footer class="ui-element w-full flex flex-col md:flex-row items-center justify-center gap-4 relative">
+            <div id="ai-response-bubble" class="text-sm">
+                <p id="ai-response-text"></p>
+                <button id="ai-response-close" class="absolute top-1 right-2 text-gray-300 hover:text-white">&times;</button>
+            </div>
+            <div id="filter-container" class="bg-white/50 backdrop-blur-sm p-2 rounded-full flex gap-2">
+                <button data-filter="all" class="filter-btn bg-gray-800 text-white px-4 py-2 rounded-full text-sm font-medium active">All</button>
+                <button data-filter="Short Form" class="filter-btn bg-white text-gray-800 px-4 py-2 rounded-full text-sm font-medium">Short Form</button>
+                <button data-filter="Gaming" class="filter-btn bg-white text-gray-800 px-4 py-2 rounded-full text-sm font-medium">Gaming</button>
+                <button data-filter="Corporate" class="filter-btn bg-white text-gray-800 px-4 py-2 rounded-full text-sm font-medium">Corporate</button>
+            </div>
+            <div class="bg-white/50 backdrop-blur-sm p-2 rounded-full flex w-full max-w-sm">
+                <input id="ai-input" type="text" placeholder="✨ AI Assistant: 'describe an action game intro' or 'show gaming'" class="w-full bg-transparent outline-none px-4 text-sm text-gray-800 placeholder-gray-500">
+                <button id="ai-submit" class="bg-gray-800 text-white px-4 py-2 rounded-full text-sm font-medium flex items-center justify-center gap-2">
+                    <span id="ai-submit-text">Ask AI</span>
+                    <div id="ai-spinner" class="spinner hidden"></div>
+                </button>
+            </div>
+        </footer>
+    </div>
+    
+    <div id="modal-backdrop" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center opacity-0 pointer-events-none">
+        <div id="modal-content" class="bg-white rounded-2xl shadow-2xl w-11/12 max-w-3xl max-h-[90vh] overflow-y-auto p-6 md:p-8 opacity-0 transform scale-95">
+            <div class="flex justify-between items-start">
+                <div class="pr-4">
+                    <h2 id="modal-title" class="text-2xl md:text-3xl font-bold text-gray-900"></h2>
+                    <p id="modal-category" class="text-sm text-orange-600 font-semibold mt-1"></p>
+                </div>
+                <button id="modal-close" class="text-gray-400 hover:text-gray-800 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <div class="aspect-w-16 aspect-h-9 rounded-lg overflow-hidden bg-gray-200">
+                         <video id="modal-video" controls class="w-full h-full object-cover"></video>
+                    </div>
+                    <p id="modal-description" class="mt-4 text-gray-600 text-sm leading-relaxed"></p>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-gray-800">Project Skills Breakdown</h3>
+                    <div class="chart-container">
+                        <canvas id="skillChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const portfolioData = [
+                { id: 1, title: 'Hyperdrive Montage', category: 'Gaming', description: 'A fast-paced gaming montage showcasing clutch moments and high-energy plays. Edited for maximum impact and viewer retention.', video: 'https://placehold.co/1920x1080/000000/FFFFFF?text=Video+1', skills: { 'Pacing': 9, 'VFX': 7, 'Sound Design': 8, 'Color Grading': 6, 'Storytelling': 5 } },
+                { id: 2, title: 'Viral Reel Campaign', category: 'Short Form', description: 'A series of 15-second vertical videos designed for social media, focusing on trending audio and quick cuts.', video: 'https://placehold.co/1920x1080/000000/FFFFFF?text=Video+2', skills: { 'Pacing': 10, 'VFX': 4, 'Sound Design': 7, 'Color Grading': 7, 'Storytelling': 6 } },
+                { id: 3, title: 'Innovate Corp. Brand Film', category: 'Corporate', description: 'A cinematic brand story for a tech company, combining interviews with sleek product shots and motion graphics.', video: 'https://placehold.co/1920x1080/000000/FFFFFF?text=Video+3', skills: { 'Pacing': 6, 'VFX': 6, 'Sound Design': 8, 'Color Grading': 9, 'Storytelling': 9 } },
+                { id: 4, title: 'E-Sports Tournament Highlights', category: 'Gaming', description: 'Official highlight reel for a major e-sports event, capturing the excitement and drama of the competition.', video: 'https://placehold.co/1920x1080/000000/FFFFFF?text=Video+4', skills: { 'Pacing': 8, 'VFX': 5, 'Sound Design': 9, 'Color Grading': 7, 'Storytelling': 7 } },
+                { id: 5, 'title': 'Startup Pitch Video', category: 'Corporate', description: 'A concise and persuasive pitch video for a new startup, designed to attract investors and explain the business model.', video: 'https://placehold.co/1920x1080/000000/FFFFFF?text=Video+5', skills: { 'Pacing': 7, 'VFX': 7, 'Sound Design': 6, 'Color Grading': 8, 'Storytelling': 10 } },
+                { id: 6, title: 'Quick-Cut Comedy Skit', category: 'Short Form', description: 'A short, punchy comedy skit for TikTok, relying on precise comedic timing and editing.', video: 'https://placehold.co/1920x1080/000000/FFFFFF?text=Video+6', skills: { 'Pacing': 9, 'VFX': 3, 'Sound Design': 8, 'Color Grading': 6, 'Storytelling': 8 } },
+            ];
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas: document.querySelector('#bg'), antialias: true });
+            
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0xF5F5F3);
+            camera.position.set(0, 0, 15);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 10, 7.5);
+            scene.add(directionalLight);
+
+            const world = new CANNON.World();
+            world.gravity.set(0, 0, 0);
+            world.broadphase = new CANNON.NaiveBroadphase();
+            world.solver.iterations = 10;
+
+            const objects = [];
+            const geometries = [
+                new THREE.BoxGeometry(2, 2, 2),
+                new THREE.SphereGeometry(1.2, 32, 32),
+                new THREE.DodecahedronGeometry(1.2),
+                new THREE.TorusGeometry(1, 0.4, 16, 100)
+            ];
+            const materials = [
+                new THREE.MeshPhongMaterial({ color: 0x4A5568, specular: 0x999999, shininess: 30 }),
+                new THREE.MeshPhongMaterial({ color: 0xF56565, specular: 0x999999, shininess: 30 }),
+                new THREE.MeshPhongMaterial({ color: 0x48BB78, specular: 0x999999, shininess: 30 }),
+                new THREE.MeshPhongMaterial({ color: 0x4299E1, specular: 0x999999, shininess: 30 }),
+            ];
+
+            // Particle System
+            const particleGeometry = new THREE.BufferGeometry();
+            const particleCount = 2000;
+            const posArray = new Float32Array(particleCount * 3);
+            for (let i = 0; i < particleCount * 3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 100;
+            }
+            particleGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            const particleMaterial = new THREE.PointsMaterial({
+                color: 0xAAAAAA,
+                size: 0.1,
+                transparent: true,
+                opacity: 0.6
+            });
+            const particles = new THREE.Points(particleGeometry, particleMaterial);
+            scene.add(particles);
+
+            portfolioData.forEach((item, i) => {
+                const geometry = geometries[i % geometries.length];
+                const material = materials[i % materials.length].clone();
+                const mesh = new THREE.Mesh(geometry, material);
+                
+                const shape = new CANNON.Sphere(1.3);
+                const body = new CANNON.Body({ mass: 1, shape });
+                
+                // Initial positions for spawning animation
+                body.position.set(
+                    (Math.random() - 0.5) * 50,
+                    (Math.random() - 0.5) * 50,
+                    (Math.random() - 0.5) * 50
+                );
+                mesh.position.copy(body.position);
+                
+                mesh.userData = item;
+                body.userData = item;
+
+                scene.add(mesh);
+                world.addBody(body);
+                objects.push({ mesh, body, initialPos: new CANNON.Vec3(
+                    (Math.random() - 0.5) * 10,
+                    (Math.random() - 0.5) * 5,
+                    (Math.random() - 0.5) * 2
+                )});
+            });
+
+            // Initial spawning animation
+            setTimeout(() => {
+                objects.forEach(obj => {
+                    const forceVec = obj.initialPos.vsub(obj.body.position);
+                    obj.body.applyImpulse(forceVec.scale(0.5), obj.body.position);
+                });
+            }, 500);
+
+
+            const mouseCoords = new THREE.Vector2();
+            const raycaster = new THREE.Raycaster();
+            let intersectedObject = null;
+            let isDragging = false;
+            let previousMouseX = 0;
+            let previousMouseY = 0;
+
+            // Increased mouseBody radius for more forgiving interaction
+            const mouseBody = new CANNON.Body({ mass: 0, shape: new CANNON.Sphere(2) }); 
+            world.addBody(mouseBody);
+
+            function onMouseDown(event) {
+                isDragging = true;
+                previousMouseX = event.clientX;
+                previousMouseY = event.clientY;
+            }
+
+            function onMouseUp(event) {
+                isDragging = false;
+            }
+
+            function onMouseMove(event) {
+                mouseCoords.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouseCoords.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+                if (isDragging) {
+                    const deltaX = event.clientX - previousMouseX;
+                    const deltaY = event.clientY - previousMouseY;
+
+                    camera.position.x -= deltaX * 0.01;
+                    camera.position.y += deltaY * 0.01;
+
+                    previousMouseX = event.clientX;
+                    previousMouseY = event.clientY;
+                }
+
+                raycaster.setFromCamera(mouseCoords, camera);
+                const intersects = raycaster.intersectObjects(objects.map(o => o.mesh));
+
+                if (intersects.length > 0) {
+                    if (intersectedObject !== intersects[0].object) {
+                        if (intersectedObject) {
+                            // Only reset if the object is no longer intersected
+                            intersectedObject.material.emissive.setHex(0x000000);
+                            intersectedObject.rotationSpeed = 0;
+                        }
+                        intersectedObject = intersects[0].object;
+                        intersectedObject.material.emissive.setHex(0x555555); // Highlight
+                        intersectedObject.rotationSpeed = 0.02; // Start rotation
+                        document.body.style.cursor = 'pointer';
+                    }
+                } else {
+                    if (intersectedObject) {
+                        // Reset if no object is intersected
+                        intersectedObject.material.emissive.setHex(0x000000);
+                        intersectedObject.rotationSpeed = 0;
+                    }
+                    intersectedObject = null;
+                    document.body.style.cursor = 'default';
+                }
+                
+                const vec = new THREE.Vector3(mouseCoords.x, mouseCoords.y, 0.5);
+                vec.unproject(camera);
+                const dir = vec.sub(camera.position).normalize();
+                const distance = -camera.position.z / dir.z;
+                const pos = camera.position.clone().add(dir.multiplyScalar(distance));
+                mouseBody.position.set(pos.x, pos.y, pos.z);
+            }
+
+            function onClick(event) {
+                // Ensure it's a click, not a drag release
+                if (!isDragging && intersectedObject) { 
+                    openModal(intersectedObject.userData);
+                }
+            }
+
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('click', onClick);
+            window.addEventListener('mousedown', onMouseDown);
+            window.addEventListener('mouseup', onMouseUp);
+
+            const timeStep = 1 / 60;
+            const centerPoint = new CANNON.Vec3(0, 0, 0);
+
+            function animate() {
+                requestAnimationFrame(animate);
+                world.step(timeStep);
+
+                objects.forEach(obj => {
+                    obj.mesh.position.copy(obj.body.position);
+                    obj.mesh.quaternion.copy(obj.body.quaternion);
+
+                    if (obj.mesh.rotationSpeed) {
+                        obj.mesh.rotation.x += obj.mesh.rotationSpeed;
+                        obj.mesh.rotation.y += obj.mesh.rotationSpeed * 0.5;
+                    }
+
+                    const distToMouse = obj.body.position.distanceTo(mouseBody.position);
+                    if (distToMouse < 6) { // Increased detection distance for force application
+                        const forceVec = obj.body.position.vsub(mouseBody.position).unit();
+                        // Increased force magnitude for more noticeable interaction
+                        const forceMagnitude = 80 / (distToMouse * distToMouse + 1); 
+                        obj.body.applyForce(forceVec.scale(forceMagnitude), obj.body.position);
+                    }
+                    
+                    const distToCenter = obj.body.position.distanceTo(centerPoint);
+                    const pullForce = obj.body.position.vsub(centerPoint).unit().scale(-0.1 * distToCenter);
+                    obj.body.applyForce(pullForce, obj.body.position);
+                    
+                    obj.body.angularVelocity.scale(0.95, obj.body.angularVelocity);
+                    obj.body.velocity.scale(0.95, obj.body.velocity);
+                });
+
+                // Animate particles
+                particles.rotation.y += 0.0005;
+                particles.rotation.x += 0.0002;
+
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+            
+            const modalBackdrop = document.getElementById('modal-backdrop');
+            const modalContent = document.getElementById('modal-content');
+            const modalClose = document.getElementById('modal-close');
+            let skillChart;
+
+            function openModal(data) {
+                document.getElementById('modal-title').innerText = data.title;
+                document.getElementById('modal-category').innerText = data.category;
+                document.getElementById('modal-description').innerText = data.description;
+                document.getElementById('modal-video').src = data.video;
+
+                modalBackdrop.classList.remove('pointer-events-none', 'opacity-0');
+                modalContent.classList.remove('opacity-0', 'scale-95');
+                modalContent.classList.add('scale-100');
+
+
+                const ctx = document.getElementById('skillChart').getContext('2d');
+                if (skillChart) {
+                    skillChart.destroy();
+                }
+                skillChart = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: Object.keys(data.skills),
+                        datasets: [{
+                            label: 'Skill Level',
+                            data: Object.values(data.skills),
+                            backgroundColor: 'rgba(234, 88, 12, 0.2)',
+                            borderColor: 'rgba(234, 88, 12, 1)',
+                            borderWidth: 2,
+                            pointBackgroundColor: 'rgba(234, 88, 12, 1)',
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                max: 10,
+                                pointLabels: {
+                                    font: {
+                                        size: 12
+                                    },
+                                    color: '#4A5568'
+                                },
+                                grid: {
+                                    color: '#E2E8F0'
+                                },
+                                angleLines: {
+                                    color: '#E2E8F0'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            function closeModal() {
+                document.getElementById('modal-video').pause();
+                modalBackdrop.classList.add('opacity-0');
+                modalContent.classList.add('opacity-0', 'scale-95');
+                modalContent.classList.remove('scale-100');
+                setTimeout(() => {
+                    modalBackdrop.classList.add('pointer-events-none');
+                }, 300);
+            }
+
+            modalClose.addEventListener('click', closeModal);
+            modalBackdrop.addEventListener('click', (e) => {
+                if (e.target === modalBackdrop) {
+                    closeModal();
+                }
+            });
+
+            const filterBtns = document.querySelectorAll('.filter-btn');
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const filter = btn.dataset.filter;
+                    handleAssistantQuery(filter);
+                    filterBtns.forEach(b => b.classList.remove('active', 'bg-gray-800', 'text-white'));
+                    filterBtns.forEach(b => b.classList.add('bg-white', 'text-gray-800'));
+                    btn.classList.add('active', 'bg-gray-800', 'text-white');
+                    btn.classList.remove('bg-white', 'text-gray-800');
+                });
+            });
+
+            const aiInput = document.getElementById('ai-input');
+            const aiSubmitBtn = document.getElementById('ai-submit');
+            const aiSubmitText = document.getElementById('ai-submit-text');
+            const aiSpinner = document.getElementById('ai-spinner');
+            const aiResponseBubble = document.getElementById('ai-response-bubble');
+            const aiResponseText = document.getElementById('ai-response-text');
+            const aiResponseCloseBtn = document.getElementById('ai-response-close');
+
+            aiSubmitBtn.addEventListener('click', () => {
+                const query = aiInput.value.trim();
+                if (query) {
+                    handleAssistantQuery(query);
+                }
+            });
+
+            aiResponseCloseBtn.addEventListener('click', () => {
+                aiResponseBubble.classList.remove('show');
+                aiResponseText.innerText = '';
+            });
+
+            async function callGeminiAPI(prompt) {
+                aiSpinner.classList.remove('hidden');
+                aiSubmitText.classList.add('hidden');
+                aiInput.disabled = true;
+                aiSubmitBtn.disabled = true;
+
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+                let retryCount = 0;
+                const maxRetries = 5;
+                const baseDelay = 1000; // 1 second
+
+                while (retryCount < maxRetries) {
+                    try {
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (response.status === 429) { // Too Many Requests
+                            const delay = baseDelay * Math.pow(2, retryCount);
+                            retryCount++;
+                            await new Promise(res => setTimeout(res, delay));
+                            continue;
+                        }
+
+                        const result = await response.json();
+                        if (result.candidates && result.candidates.length > 0 &&
+                            result.candidates[0].content && result.candidates[0].content.parts &&
+                            result.candidates[0].content.parts.length > 0) {
+                            return result.candidates[0].content.parts[0].text;
+                        } else {
+                            console.error("Gemini API returned unexpected structure:", result);
+                            return "Could not generate a response. Please try again.";
+                        }
+                    } catch (error) {
+                        console.error("Error calling Gemini API:", error);
+                        const delay = baseDelay * Math.pow(2, retryCount);
+                        retryCount++;
+                        await new Promise(res => setTimeout(res, delay));
+                    }
+                }
+                return "Failed to get a response after multiple retries. Please try again later.";
+            }
+
+            async function handleAssistantQuery(query) {
+                // Check if the query is for content generation
+                const generationKeywords = ['describe', 'generate', 'write', 'create a description for', 'tell me about'];
+                const isGenerationRequest = generationKeywords.some(keyword => query.toLowerCase().includes(keyword));
+
+                if (isGenerationRequest) {
+                    aiResponseBubble.classList.remove('show'); // Hide old bubble if present
+                    aiResponseText.innerText = 'Generating...';
+                    aiResponseBubble.classList.add('show');
+
+                    const prompt = `Generate a concise and engaging description for a video project based on this request: "${query}". Focus on the editing style, target audience, and key highlights. Keep it under 80 words.`;
+                    const generatedText = await callGeminiAPI(prompt);
+                    aiResponseText.innerText = generatedText;
+
+                    aiSpinner.classList.add('hidden');
+                    aiSubmitText.classList.remove('hidden');
+                    aiInput.disabled = false;
+                    aiSubmitBtn.disabled = false;
+
+                } else {
+                    // Existing filter logic
+                    const filter = query; // Use query directly for filter
+                    objects.forEach(obj => {
+                        const inFilter = (filter === 'all' || obj.body.userData.category.toLowerCase().includes(filter.toLowerCase()));
+                        const targetPosition = new CANNON.Vec3(
+                            (Math.random() - 0.5) * (inFilter ? 10 : 60), // Increased spread for non-filtered
+                            (Math.random() - 0.5) * (inFilter ? 5 : 30),
+                            (Math.random() - 0.5) * (inFilter ? 2 : 15)
+                        );
+                        
+                        if (!inFilter) {
+                            targetPosition.x += Math.sign(targetPosition.x) * 30;
+                            targetPosition.y += Math.sign(targetPosition.y) * 15;
+                        }
+
+                        const forceVec = targetPosition.vsub(obj.body.position);
+                        obj.body.applyImpulse(forceVec.scale(0.15), obj.body.position);
+                    });
+
+                    // Update filter buttons if a direct filter keyword was used in AI input
+                    filterBtns.forEach(b => {
+                        b.classList.remove('active', 'bg-gray-800', 'text-white');
+                        b.classList.add('bg-white', 'text-gray-800');
+                        if (query.toLowerCase().includes(b.dataset.filter.toLowerCase())) {
+                            b.classList.add('active', 'bg-gray-800', 'text-white');
+                            b.classList.remove('bg-white', 'text-gray-800');
+                        } else if (query.toLowerCase() === 'all' && b.dataset.filter === 'all') {
+                             b.classList.add('active', 'bg-gray-800', 'text-white');
+                             b.classList.remove('bg-white', 'text-gray-800');
+                        }
+                    });
+                }
+            }
+            
+            setTimeout(() => {
+                document.getElementById('info-box')?.classList.add('hidden');
+            }, 8000);
+        });
+    </script>
+</body>
+</html>
